@@ -1,47 +1,44 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity =0.6.11;
+pragma solidity 0.7.3;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IMerkleDistributor.sol";
 
 contract MerkleDistributor is IMerkleDistributor {
-    address public immutable override token;
-    bytes32 public immutable override merkleRoot;
+    using SafeMath for uint256;
 
-    // This is a packed array of booleans.
-    mapping(uint256 => uint256) private claimedBitMap;
+    bytes32 public override merkleRoot;
 
-    constructor(address token_, bytes32 merkleRoot_) public {
-        token = token_;
-        merkleRoot = merkleRoot_;
+    // Mapping of addresses to the cumulative total earned of each token.
+    mapping(address => mapping(address => uint256)) claimed;
+
+    constructor(bytes32 _merkleRoot) {
+        merkleRoot = _merkleRoot;
     }
 
-    function isClaimed(uint256 index) public view override returns (bool) {
-        uint256 claimedWordIndex = index / 256;
-        uint256 claimedBitIndex = index % 256;
-        uint256 claimedWord = claimedBitMap[claimedWordIndex];
-        uint256 mask = (1 << claimedBitIndex);
-        return claimedWord & mask == mask;
-    }
-
-    function _setClaimed(uint256 index) private {
-        uint256 claimedWordIndex = index / 256;
-        uint256 claimedBitIndex = index % 256;
-        claimedBitMap[claimedWordIndex] = claimedBitMap[claimedWordIndex] | (1 << claimedBitIndex);
-    }
-
-    function claim(uint256 index, address account, uint256 amount, bytes32[] calldata merkleProof) external override {
-        require(!isClaimed(index), 'MerkleDistributor: Drop already claimed.');
-
+    function claim(
+        address _token,
+        uint256 _amount,
+        bytes32[] calldata _merkleProof
+    ) external override {
         // Verify the merkle proof.
-        bytes32 node = keccak256(abi.encodePacked(index, account, amount));
-        require(MerkleProof.verify(merkleProof, merkleRoot, node), 'MerkleDistributor: Invalid proof.');
+        bytes32 node = keccak256(abi.encodePacked(msg.sender, _token, _amount));
+        require(MerkleProof.verify(_merkleProof, merkleRoot, node), "MerkleDistributor: Invalid proof.");
+
+        // Calculate the amount to be claimed.
+        uint256 claimable = _amount.sub(claimed[msg.sender][_token], "MerkleDistributor: Excessive claim.");
+        require(claimable > 0, "MerkleDistributor: Nothing to claim.");
 
         // Mark it claimed and send the token.
-        _setClaimed(index);
-        require(IERC20(token).transfer(account, amount), 'MerkleDistributor: Transfer failed.');
+        claimed[msg.sender][_token] = claimed[msg.sender][_token].add(claimable);
+        require(IERC20(_token).transfer(msg.sender, claimable), "MerkleDistributor: Transfer failed.");
 
-        emit Claimed(index, account, amount);
+        emit Claimed(msg.sender, _token, _amount);
+    }
+
+    function updateMerkleRoot(bytes32 _merkleRoot) external override {
+        merkleRoot = _merkleRoot;
     }
 }

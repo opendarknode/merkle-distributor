@@ -1,48 +1,55 @@
 {
-  "name": "@uniswap/merkle-distributor",
-  "author": {
-    "name": "Moody Salem"
-  },
-  "description": "📦 A smart contract that distributes a balance of tokens according to a merkle root",
-  "version": "1.0.1",
-  "homepage": "https://uniswap.org",
-  "keywords": [
-    "uniswap",
-    "erc20"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Uniswap/merkle-distributor"
-  },
-  "files": [
-    "build"
-  ],
-  "engines": {
-    "node": ">=10"
-  },
-  "devDependencies": {
-    "@openzeppelin/contracts": "^3.4.0",
-    "@types/chai": "^4.2.6",
-    "@types/mocha": "^5.2.7",
-    "axios": "^0.20.0",
-    "chai": "^4.2.0",
-    "commander": "^6.1.0",
-    "ethereum-waffle": "^3.0.0",
-    "ethereumjs-util": "^7.0.4",
-    "mocha": "^6.2.2",
-    "prettier": "^2.0.5",
-    "rimraf": "^3.0.0",
-    "solc": "0.6.11",
-    "ts-node": "^8.5.4",
-    "typescript": "^3.7.3"
-  },
-  "scripts": {
-    "precompile": "rimraf ./build/",
-    "compile": "waffle",
-    "pretest": "yarn compile",
-    "test": "mocha",
-    "generate-merkle-root": "ts-node scripts/generate-merkle-root.ts",
-    "generate-merkle-root:example": "ts-node scripts/generate-merkle-root.ts --input scripts/example.json",
-    "prepublishOnly": "yarn test"
-  }
+    "name": "@uniswap/merkle-distributor",
+    "author": {
+        "name": "Moody Salem"
+    },
+    "description": "📦 A smart contract that distributes a balance of tokens according to a merkle root",
+    "version": "1.0.1",
+    "homepage": "https://uniswap.org",
+    "keywords": [
+        "uniswap",
+        "erc20"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Uniswap/merkle-distributor"
+    },
+    "files": [
+        "build"
+    ],
+    "engines": {
+        "node": ">=10"
+    },
+    "devDependencies": {
+        "@nomiclabs/hardhat-ethers": "^2.0.1",
+        "@nomiclabs/hardhat-waffle": "^2.0.1",
+        "@openzeppelin/contracts": "^3.4.0",
+        "@typechain/ethers-v5": "^5.0.0",
+        "@types/chai": "^4.2.6",
+        "@types/mocha": "^5.2.7",
+        "axios": "^0.20.0",
+        "chai": "^4.3.0",
+        "commander": "^6.1.0",
+        "ethereum-waffle": "^3.2.2",
+        "ethereumjs-util": "^7.0.4",
+        "ethers": "^5.0.31",
+        "hardhat": "^2.0.10",
+        "hardhat-typechain": "^0.3.5",
+        "mocha": "^6.2.2",
+        "prettier": "^2.0.5",
+        "solc": "0.6.11",
+        "ts-generator": "^0.1.1",
+        "ts-node": "^8.5.4",
+        "typechain": "^4.0.1",
+        "typescript": "^3.7.3"
+    },
+    "scripts": {
+        "compile": "hh compile",
+        "test": "hh test",
+        "generate-merkle-root": "ts-node scripts/generate-merkle-root.ts",
+        "generate-merkle-root:example": "ts-node scripts/generate-merkle-root.ts --input scripts/example.json",
+        "prepublishOnly": "yarn test",
+        "typechain": "typechain --target ethers-v5 --outDir types 'abi/*.json'"
+    },
+    "dependencies": {}
 }

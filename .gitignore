@@ -4,3 +4,4 @@ wrangler.toml
 types
 artifacts
 cache
+.DS_Store

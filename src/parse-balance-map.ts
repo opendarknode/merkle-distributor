@@ -29,11 +29,8 @@ export interface MerkleClaim {
 export type Balance = { token: string; account: string; earnings: BigNumber };
 
 export function parseBalanceMap(balances: Balance[]): MerkleDistributorInfo {
-    // Sort data by token, then by account
-    const sorted = balances.sort((a, b) => a.token.localeCompare(b.token) || a.account.localeCompare(b.account));
-
     // Use checksummed token and account
-    const parsedSorted = sorted.map(({ token, account, earnings }) => {
+    const parsedBalances = balances.map(({ token, account, earnings }) => {
         if (!isAddress(token)) {
             throw new Error(`Found invalid token address: ${token}`);
         }
@@ -51,10 +48,10 @@ export function parseBalanceMap(balances: Balance[]): MerkleDistributorInfo {
     });
 
     // Construct a tree from parsedSorted
-    const tree = new BalanceTree(parsedSorted);
+    const tree = new BalanceTree(parsedBalances);
 
     // Generate claims for each token
-    const tokens = parsedSorted.reduce<MerkleToken>((memo, { token, account, earnings }) => {
+    const tokens = parsedBalances.reduce<MerkleToken>((memo, { token, account, earnings }) => {
         const claim: MerkleClaim = {
             [account]: {
                 earnings: earnings.toHexString(),

@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { MerkleDistributor, MerkleDistributor__factory, TestERC20 } from "../types";
+import { MerkleDistributor, MerkleDistributor__factory, TestERC20, TestERC20__factory } from "../types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import BalanceTree from "../src/balance-tree";
 import { BigNumber } from "ethers";
@@ -19,11 +19,11 @@ describe("MerkleDistributor", () => {
     let tree: BalanceTree;
 
     before(async () => {
-        Distributor = (await ethers.getContractFactory("MerkleDistributor")) as MerkleDistributor__factory;
+        Distributor = ((await ethers.getContractFactory("MerkleDistributor")) as unknown) as MerkleDistributor__factory;
         signers = await ethers.getSigners();
         [alice, bob] = signers;
 
-        let Token = await ethers.getContractFactory("TestERC20");
+        let Token = ((await ethers.getContractFactory("TestERC20")) as unknown) as TestERC20__factory;
         token1 = (await Token.deploy("Token", "TKN", 0)) as TestERC20;
         token2 = (await Token.deploy("Token", "TKN", 0)) as TestERC20;
     });

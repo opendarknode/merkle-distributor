@@ -11,11 +11,12 @@ const config: HardhatUserConfig = {
         },
     },
     solidity: "0.7.3",
-    typechain: {
-        outDir: "types",
-    },
     mocha: {
         timeout: 50000,
+    },
+    typechain: {
+        outDir: "types",
+        target: "ethers-v5",
     },
 };
 

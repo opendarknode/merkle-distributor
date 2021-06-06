@@ -44,7 +44,8 @@
     "scripts": {
         "compile": "npx hardhat compile",
         "test": "npx hardhat test",
-        "prepublish": "tsc"
+        "prepublish": "tsc",
+        "publish": "npm publish"
     },
     "dependencies": {}
 }

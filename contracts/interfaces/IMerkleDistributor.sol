@@ -9,8 +9,10 @@ interface IMerkleDistributor {
     // Claim the given amount of the token to the given address. Reverts if the inputs are invalid.
     function claim(
         address _token,
-        uint256 _cumulativeAmount,
-        bytes32[] calldata _merkleProof
+        uint256 _accountPoints,
+        uint256 _aggregatePoints,
+        bytes32[] calldata _accountMerkleProof,
+        bytes32[] calldata _aggregateMerkleProof
     ) external;
 
     function getClaimed(address _account, address _token) external view returns (uint256);
@@ -19,5 +21,5 @@ interface IMerkleDistributor {
     function updateMerkleRoot(bytes32 _merkleRoot) external;
 
     // This event is triggered whenever a call to #claim succeeds.
-    event Claimed(address _account, address _token, uint256 _amount);
+    event Claimed(address _account, address _token, uint256 _percent);
 }

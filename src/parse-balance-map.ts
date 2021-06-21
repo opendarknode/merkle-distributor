@@ -9,76 +9,58 @@ const { isAddress, getAddress } = utils;
 // and the tree has no additional distributions.
 interface MerkleDistributorInfo {
     merkleRoot: string;
-    tokens: MerkleToken;
-}
-
-interface MerkleToken {
-    [token: string]: {
-        tokenTotal: string;
-        claims: MerkleClaim;
-    };
+    claims: MerkleClaim;
 }
 
 export interface MerkleClaim {
     [account: string]: {
-        earnings: string;
+        points: string;
         proof: string[];
     };
 }
 
-export type Balance = { token: string; account: string; earnings: BigNumber };
+export type Balance = { account: string; points: BigNumber };
 
 export function parseBalanceMap(balances: Balance[]): MerkleDistributorInfo {
     // Use checksummed token and account
-    const parsedBalances = balances.map(({ token, account, earnings }) => {
-        if (!isAddress(token)) {
-            throw new Error(`Found invalid token address: ${token}`);
-        }
-        const parsedToken = getAddress(token);
-
+    const parsedBalances = balances.map(({ account, points }) => {
         if (!isAddress(account)) {
             throw new Error(`Found invalid account address: ${account}`);
         }
         const parsedAccount = getAddress(account);
 
-        const parsedEarnings = BigNumber.from(earnings);
-        if (parsedEarnings.lte(0)) throw new Error(`Invalid amount for account: ${account} for token: ${token}`);
+        if (points.lte(0)) throw new Error(`Invalid points for account: ${account}`);
 
-        return { token: parsedToken, account: parsedAccount, earnings: parsedEarnings };
+        return { account: parsedAccount, points };
     });
 
     // Construct a tree from parsedSorted
     const tree = new BalanceTree(parsedBalances);
 
     // Generate claims for each token
-    const tokens = parsedBalances.reduce<MerkleToken>((memo, { token, account, earnings }) => {
+    const claims = parsedBalances.reduce<MerkleClaim>((memo, { account, points }) => {
         const claim: MerkleClaim = {
             [account]: {
-                earnings: earnings.toHexString(),
-                proof: tree.getProof(account, token, earnings),
+                points: points.toHexString(),
+                proof: tree.getProof(account, points),
             },
         };
 
-        if (!memo[token]) {
-            memo[token] = {
-                claims: claim,
-                tokenTotal: earnings.toHexString(),
-            };
+        if (!memo) {
+            memo = claim;
             return memo;
         }
 
-        if (memo[token].claims[account]) {
-            throw new Error(`Duplicate account: ${account} for token: ${token}`);
+        if (memo[account]) {
+            throw new Error(`Duplicate account: ${account}`);
         }
 
-        memo[token].claims = Object.assign({}, memo[token].claims, claim);
-        memo[token].tokenTotal = BigNumber.from(memo[token].tokenTotal).add(earnings).toHexString();
-
+        memo = Object.assign({}, memo, claim);
         return memo;
     }, {});
 
     return {
         merkleRoot: tree.getHexRoot(),
-        tokens,
+        claims,
     };
 }

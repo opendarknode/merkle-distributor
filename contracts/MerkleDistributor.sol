@@ -11,7 +11,7 @@ contract MerkleDistributor is IMerkleDistributor {
 
     bytes32 public override merkleRoot;
 
-    // Mapping of addresses to the cumulative total earned of each token.
+    // Mapping of account to token to the cumulative points used to claim that token.
     mapping(address => mapping(address => uint256)) claimed;
 
     constructor(bytes32 _merkleRoot) {
@@ -20,22 +20,37 @@ contract MerkleDistributor is IMerkleDistributor {
 
     function claim(
         address _token,
-        uint256 _amount,
-        bytes32[] calldata _merkleProof
+        uint256 _accountPoints,
+        uint256 _aggregatePoints,
+        bytes32[] calldata _accountMerkleProof,
+        bytes32[] calldata _aggregateMerkleProof
     ) external override {
-        // Verify the merkle proof.
-        bytes32 node = keccak256(abi.encodePacked(msg.sender, _token, _amount));
-        require(MerkleProof.verify(_merkleProof, merkleRoot, node), "MerkleDistributor: Invalid proof.");
+        // Verify the account's merkle proof.
+        bytes32 accountNode = keccak256(abi.encodePacked(msg.sender, _accountPoints));
+        require(MerkleProof.verify(_accountMerkleProof, merkleRoot, accountNode), "MerkleDistributor: Invalid account proof.");
 
-        // Calculate the amount to be claimed.
-        uint256 claimable = _amount.sub(claimed[msg.sender][_token], "MerkleDistributor: Excessive claim.");
-        require(claimable > 0, "MerkleDistributor: Nothing to claim.");
+        // Verify the aggregate's merkle proof.
+        bytes32 aggregateNode = keccak256(abi.encodePacked(address(0), _aggregatePoints));
+        require(MerkleProof.verify(_aggregateMerkleProof, merkleRoot, aggregateNode), "MerkleDistributor: Invalid aggregate proof.");
 
-        // Mark it claimed and send the token.
-        claimed[msg.sender][_token] = claimed[msg.sender][_token].add(claimable);
-        require(IERC20(_token).transfer(msg.sender, claimable), "MerkleDistributor: Transfer failed.");
+        // Subtract what's already been claimed from the account's cumulative points.
+        uint256 accountClaimable = _accountPoints.sub(claimed[msg.sender][_token], "MerkleDistributor: Excessive account points.");
 
-        emit Claimed(msg.sender, _token, _amount);
+        // Subtract what's already been claimed from the aggregate's cumulative points.
+        uint256 aggregateClaimable = _aggregatePoints.sub(claimed[address(0)][_token], "MerkleDistributor: Excessive aggregate points.");
+
+        // Verify whether all points have been claimed.
+        require(accountClaimable > 0 && aggregateClaimable > 0, "MerkleDistributor: Nothing to claim.");
+
+        // Percent of the operator's balance to claim.
+        uint256 percentClaimable = accountClaimable.mul(1e18).div(aggregateClaimable);
+
+        // Emit the event for RenVM to pick up.
+        emit Claimed(msg.sender, _token, percentClaimable);
+
+        // Mark it claimed.
+        claimed[msg.sender][_token] = claimed[msg.sender][_token].add(accountClaimable);
+        claimed[address(0)][_token] = claimed[address(0)][_token].add(accountClaimable);
     }
 
     function getClaimed(address _account, address _token) external view override returns (uint256) {
